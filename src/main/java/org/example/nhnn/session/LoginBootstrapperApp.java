@@ -8,23 +8,27 @@ import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import org.example.nhnn.config.EnvConfig;
+import org.example.nhnn.ocr.CaptchaOcrHelper;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Chuong trinh chay TAY (khong phai JUnit test) de dang nhap mot lan vao he
  * thong va luu lai storageState cho cac lan chay test sau tai su dung.
  *
- * Cach chay:
+ * Cach chay (tai khoan Cuc CNTT hoac Vu TCCB - cung 1 trang dang nhap tabid=38):
  *   mvn exec:java -Dexec.mainClass="org.example.nhnn.session.LoginBootstrapperApp" -Dexec.args="dvc-nhnn"
- *   mvn exec:java -Dexec.mainClass="org.example.nhnn.session.LoginBootstrapperApp" -Dexec.args="qlcv"
+ *   mvn exec:java -Dexec.mainClass="org.example.nhnn.session.LoginBootstrapperApp" -Dexec.args="dvc-nhnn-tccb"
  *
- * He thong DVC-NHNN yeu cau captcha anh 3 chu so - framework nay KHONG OCR.
- * Thay vi doc captcha tu console (khong hoat dong trong moi truong chay
- * khong tuong tac/non-interactive stdin), chuong trinh:
+ * He thong DVC-NHNN yeu cau captcha anh 3 chu so. Chuong trinh thu tu dong
+ * doc ma bang {@link CaptchaOcrHelper} (OCR tu xay dung, xem Javadoc class
+ * do ve do chinh xac va quyet dinh bo rang buoc "khong OCR" truoc day).
+ * Neu OCR khong chac chan (anh captcha khac thuong, bi nhieu nang...), roi
+ * ve co che cu:
  *   1. Luu anh captcha ra config/state/captcha/dvc-nhnn-captcha.png
  *   2. CHO (poll) mot file tra loi config/state/captcha/dvc-nhnn-captcha-answer.txt
  *      xuat hien, chua dung 3 chu so captcha (khong xuong dong).
@@ -51,8 +55,9 @@ public final class LoginBootstrapperApp {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 1 || (!KnownSystems.DVC_NHNN.equals(args[0]) && !KnownSystems.QLCV.equals(args[0]))) {
-            System.err.println("Cach dung: LoginBootstrapperApp <dvc-nhnn|qlcv>");
+        if (args.length != 1
+                || (!KnownSystems.DVC_NHNN.equals(args[0]) && !KnownSystems.DVC_NHNN_TCCB.equals(args[0]))) {
+            System.err.println("Cach dung: LoginBootstrapperApp <dvc-nhnn|dvc-nhnn-tccb>");
             System.exit(2);
             return;
         }
@@ -67,9 +72,13 @@ public final class LoginBootstrapperApp {
                     .setIgnoreHTTPSErrors(true));
             Page page = context.newPage();
 
-            boolean loggedIn = KnownSystems.DVC_NHNN.equals(systemKey)
-                    ? loginDvcNhnn(page, config)
-                    : loginQlcv(page, config);
+            String username = KnownSystems.DVC_NHNN.equals(systemKey)
+                    ? config.dvcNhnnCucCnttUsername()
+                    : config.dvcNhnnVuTccbUsername();
+            String password = KnownSystems.DVC_NHNN.equals(systemKey)
+                    ? config.dvcNhnnCucCnttPassword()
+                    : config.dvcNhnnVuTccbPassword();
+            boolean loggedIn = loginDvcNhnn(page, config, username, password);
 
             if (!loggedIn) {
                 System.err.println("Dang nhap that bai sau " + MAX_CAPTCHA_ATTEMPTS + " lan thu (hoac het thoi gian cho ma captcha). Dung lai.");
@@ -83,7 +92,7 @@ public final class LoginBootstrapperApp {
         }
     }
 
-    private static boolean loginDvcNhnn(Page page, EnvConfig config) throws IOException {
+    private static boolean loginDvcNhnn(Page page, EnvConfig config, String username, String password) throws IOException {
         Path captchaDir = config.captchaDir();
         Files.createDirectories(captchaDir);
         Path captchaFile = captchaDir.resolve("dvc-nhnn-captcha.png");
@@ -110,8 +119,12 @@ public final class LoginBootstrapperApp {
             byte[] captchaBytes = captchaImage.screenshot();
             Files.write(captchaFile, captchaBytes);
 
-            String code = null;
-            for (int staleRetry = 1; staleRetry <= MAX_STALE_CAPTCHA_RETRIES; staleRetry++) {
+            String code = tryOcr(config, captchaFile);
+            if (code != null) {
+                System.out.println("[Lan thu " + attempt + "/" + MAX_CAPTCHA_ATTEMPTS + "] "
+                        + "OCR tu doc duoc ma captcha: " + code);
+            }
+            for (int staleRetry = 1; code == null && staleRetry <= MAX_STALE_CAPTCHA_RETRIES; staleRetry++) {
                 System.out.println("[Lan thu " + attempt + "/" + MAX_CAPTCHA_ATTEMPTS + "] "
                         + "Anh captcha da luu tai: " + captchaFile.toAbsolutePath());
                 System.out.println("Hay ghi ma captcha (3 chu so) vao file (khong xuong dong thua): "
@@ -148,8 +161,8 @@ public final class LoginBootstrapperApp {
             // Dien toan bo form (bao gom mat khau) NGAY TRUOC KHI submit, de
             // tranh bi mot co che nao do tren trang tu xoa truong mat khau
             // neu dien qua som va cho lau (xem Javadoc dau class).
-            page.fill(KnownSystems.DVC_NHNN_USERNAME_INPUT, config.dvcNhnnCucCnttUsername());
-            page.fill(KnownSystems.DVC_NHNN_PASSWORD_INPUT, config.dvcNhnnCucCnttPassword());
+            page.fill(KnownSystems.DVC_NHNN_USERNAME_INPUT, username);
+            page.fill(KnownSystems.DVC_NHNN_PASSWORD_INPUT, password);
             page.fill(KnownSystems.DVC_NHNN_CAPTCHA_INPUT, code.trim());
 
             Locator loginButton = page.locator(KnownSystems.DVC_NHNN_LOGIN_BUTTON).first();
@@ -177,31 +190,13 @@ public final class LoginBootstrapperApp {
         return false;
     }
 
-    /**
-     * TODO: SOP khong mo ta chi tiet DOM trang dang nhap QLCV (khong co
-     * captcha theo tai lieu). Selector duoi day la gia dinh tam, can xac
-     * nhan lai khi co quyen truy cap he thong that.
-     */
-    private static boolean loginQlcv(Page page, EnvConfig config) {
-        page.navigate(config.qlcvBaseUrl());
-
-        Locator passwordInput = page.locator("input[type='password']").first();
-        passwordInput.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.VISIBLE)
-                .setTimeout(DEFAULT_WAIT_TIMEOUT_MS));
-
-        page.fill("input[type='text'], input[name*='username' i]", config.qlcvUsername());
-        page.fill("input[type='password']", config.qlcvPassword());
-
-        Locator submitButton = page.locator("button[type='submit'], input[type='submit']").first();
-        submitButton.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.VISIBLE)
-                .setTimeout(DEFAULT_WAIT_TIMEOUT_MS));
-        submitButton.click();
-
-        page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions()
-                .setTimeout(DEFAULT_WAIT_TIMEOUT_MS));
-        return page.locator("input[type='password']").count() == 0;
+    /** Tra ve null neu OCR bi tat (config) hoac khong chac chan - goi fallback thu cong. */
+    private static String tryOcr(EnvConfig config, Path captchaFile) {
+        if (!config.captchaOcrEnabled()) {
+            return null;
+        }
+        Optional<String> result = CaptchaOcrHelper.solve(captchaFile);
+        return result.orElse(null);
     }
 
     /**

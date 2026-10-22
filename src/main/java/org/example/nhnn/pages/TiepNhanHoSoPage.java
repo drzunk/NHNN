@@ -2,8 +2,10 @@ package org.example.nhnn.pages;
 
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
+import org.example.nhnn.helpers.EformFrameHelper;
 import org.example.nhnn.helpers.RadComboHelper;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +36,11 @@ public final class TiepNhanHoSoPage extends BasePage {
 
     public void chonNganHangVaXacNhan(String tenNganHang) {
         RadComboHelper.selectByText(page, FORM + "_cboDonViNganHang", tenNganHang);
-        page.locator("input[id*='" + FORM + "_btnLuuDonViNganHang']").first().click();
+        // Nut nay la Telerik RadButton (rbLinkButton) render ra <span>, KHONG
+        // phai <input> - dung id$=... (ket thuc dung bang, khong phai chua)
+        // de khop chinh xac span that, loai tru ca <input ..._ClientState>
+        // di kem (da xac nhan qua khao sat DOM that).
+        page.locator("[id$='" + FORM + "_btnLuuDonViNganHang']").first().click();
     }
 
     public void dienNguoiNopHoSo(String soGiayToTuyThan, String tenKhachHang, String diDong, String diaChiThuongTru) {
@@ -44,8 +50,23 @@ public final class TiepNhanHoSoPage extends BasePage {
         fillGridField("tbDiaChiThuongTru", diaChiThuongTru);
     }
 
+    /**
+     * Dien va luu to khai dien tu E-form (Bay 3) truoc khi bam luu() chinh -
+     * can cho nhom 2 CTS "co eform" (SOP: Nhap to khai online tai Tiep nhan
+     * -> Luu ho so -> Thu ly -> Xem Form kiem soat).
+     */
+    public void dienEformVaLuu(String hoTen, String soCccd) {
+        EformFrameHelper.fillAndSave(page, "input[name*='Eform_CongChuc']",
+                Map.of("hoTen", hoTen, "cccd", soCccd), "Lưu tờ khai");
+    }
+
     public void luu() {
-        page.locator("input[id*='" + FORM + "_btnSave']").first().click();
+        // Cung la Telerik RadButton render ra <span>, khong phai <input>
+        // (da xac nhan qua khao sat DOM that, giong btnLuuDonViNganHang).
+        // id$=... (ket thuc dung bang) de tranh khop nham btnSaveWord/
+        // btnSavePanel (ca 2 deu CHUA "_btnSave" nhung khong KET THUC bang
+        // dung "_btnSave").
+        page.locator("[id$='" + FORM + "_btnSave']").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(30_000));
     }
 

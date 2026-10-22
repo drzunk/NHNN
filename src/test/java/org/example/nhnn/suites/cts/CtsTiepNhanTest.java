@@ -23,7 +23,10 @@ class CtsTiepNhanTest extends BaseDvcNhnnTest {
     private static final String THU_TUC_CAP_TO_CHUC_XML_IN = "22";
     private static final String THU_TUC_CAP_LAI_CA_NHAN_XML_OUT = "44";
 
-    private static final String NGAN_HANG_MAU = "Ngân hàng Nhà nước Việt Nam";
+    // "Ngan hang Nha nuoc Viet Nam" khong khop bat ky item nao trong combo
+    // 5913 dong vi tren he thong that (da xac nhan bang cach doc truc tiep
+    // get_items() qua client API) - doi sang gia tri thuc te ton tai.
+    private static final String NGAN_HANG_MAU = "01101001 - Văn phòng Ngân hàng Nhà nước";
 
     @Test
     void capCtsToChuc_nhomXmlIn_taoHoSoThanhCong() {

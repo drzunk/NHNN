@@ -87,18 +87,6 @@ public final class EnvConfig {
         return required("DVC_NHNN_VUTCCB_PASSWORD");
     }
 
-    public String qlcvBaseUrl() {
-        return required("QLCV_BASE_URL");
-    }
-
-    public String qlcvUsername() {
-        return required("QLCV_USERNAME");
-    }
-
-    public String qlcvPassword() {
-        return required("QLCV_PASSWORD");
-    }
-
     public Path storageStateDir() {
         return STATE_DIR;
     }
@@ -119,5 +107,15 @@ public final class EnvConfig {
 
     public Path reportDir() {
         return REPORT_DIR;
+    }
+
+    /**
+     * true (mac dinh) = thu tu dong doc captcha bang CaptchaOcrHelper truoc
+     * khi cho nguoi/agent dien tay. false = luon cho tra loi thu cong (vo
+     * hieu hoa OCR, vi du: CAPTCHA_OCR_ENABLED=false trong config/.env).
+     */
+    public boolean captchaOcrEnabled() {
+        String value = get("CAPTCHA_OCR_ENABLED");
+        return value == null || !value.equalsIgnoreCase("false");
     }
 }

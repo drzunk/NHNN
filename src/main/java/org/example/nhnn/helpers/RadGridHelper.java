@@ -30,4 +30,18 @@ public final class RadGridHelper {
         menuItem.click();
         page.waitForLoadState();
     }
+
+    /**
+     * Tich chon checkbox cua dong chua ma ho so, dung cho cac man hinh
+     * chuyen ho so hang loat TDKT (238/239/240/241) - khac Bay 2 (khong mo
+     * RadContextMenu, chi tick checkbox roi chon nguoi nhan + bam nut
+     * chuyen o noi khac, xem RadDropDownTreeHelper).
+     */
+    public static void tickRowCheckbox(Page page, String maHoSo, String checkboxClassOrIdSubstring) {
+        Locator row = page.locator(
+                String.format("tr:has-text(\"%s\")", maHoSo)
+        ).first();
+        row.locator("input[type='checkbox']." + checkboxClassOrIdSubstring
+                + ", input[type='checkbox'][id*='" + checkboxClassOrIdSubstring + "']").first().check();
+    }
 }

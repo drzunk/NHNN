@@ -19,7 +19,7 @@ import java.io.IOException;
  * Lop cha chung cho moi test class: giu MOT Playwright/Browser song xuyen
  * suot ca class test (khong mo/dong browser moi test method), dung tinh
  * than "khong tat/mo browser moi lenh" cua SOP. Moi test method tu tao
- * BrowserContext/Page rieng (xem BaseDvcNhnnTest/BaseQlcvTest) de co su co
+ * BrowserContext/Page rieng (xem BaseDvcNhnnTest/BaseTdktTest) de co su co
  * lap can thiet ma khong phai tra gia khoi dong lai Chromium.
  */
 @ExtendWith(ScreenshotOnFailureExtension.class)

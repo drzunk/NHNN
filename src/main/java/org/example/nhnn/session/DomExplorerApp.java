@@ -19,13 +19,15 @@ import java.nio.file.Path;
  *
  * Cach chay (tranh truyen ky tu '&' qua shell bang cach ghep URL trong Java):
  *   mvn exec:java -Dexec.mainClass="org.example.nhnn.session.DomExplorerApp" \
- *       -Dexec.args="<tabid> <ctl> <mid> <ten_file_dump_khong_duoi> [radComboClientId]"
+ *       -Dexec.args="<dvc-nhnn|dvc-nhnn-tccb> <tabid> <ctl> <mid> <ten_file_dump_khong_duoi> [radComboClientId]"
  *
- * Vi du (tabid=37, ctl=TIEPNHAN, mid=795):
- *   -Dexec.args="37 TIEPNHAN 795 tabid37"
+ * Vi du (session Cuc CNTT, tabid=37, ctl=TIEPNHAN, mid=795):
+ *   -Dexec.args="dvc-nhnn 37 TIEPNHAN 795 tabid37"
  * Kem trich xuat item cua mot RadComboBox (Telerik client API, vi gia tri
  * value khong nam trong HTML tinh):
- *   -Dexec.args="37 TIEPNHAN 795 tabid37 dnn_ctr795_TiepNhanHoSoForm_cmbLoaiHoSoID"
+ *   -Dexec.args="dvc-nhnn 37 TIEPNHAN 795 tabid37 dnn_ctr795_TiepNhanHoSoForm_cmbLoaiHoSoID"
+ * Vi du khao sat man hinh TDKT bang session Vu TCCB (tabid=238):
+ *   -Dexec.args="dvc-nhnn-tccb 238 PHANCONG 0 tabid238"
  */
 public final class DomExplorerApp {
 
@@ -33,16 +35,22 @@ public final class DomExplorerApp {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 4 && args.length != 5) {
-            System.err.println("Cach dung: DomExplorerApp <tabid> <ctl> <mid> <ten_file_khong_duoi> [radComboClientId]");
+        if (args.length != 5 && args.length != 6) {
+            System.err.println("Cach dung: DomExplorerApp <dvc-nhnn|dvc-nhnn-tccb> <tabid> <ctl> <mid> <ten_file_khong_duoi> [radComboClientId]");
             System.exit(2);
             return;
         }
-        String tabid = args[0];
-        String ctl = args[1];
-        String mid = args[2];
-        String fileBaseName = args[3];
-        String radComboClientId = args.length == 5 ? args[4] : null;
+        String systemKey = args[0];
+        if (!KnownSystems.DVC_NHNN.equals(systemKey) && !KnownSystems.DVC_NHNN_TCCB.equals(systemKey)) {
+            System.err.println("systemKey phai la 'dvc-nhnn' hoac 'dvc-nhnn-tccb', nhan duoc: " + systemKey);
+            System.exit(2);
+            return;
+        }
+        String tabid = args[1];
+        String ctl = args[2];
+        String mid = args[3];
+        String fileBaseName = args[4];
+        String radComboClientId = args.length == 6 ? args[5] : null;
         String url = "http://10.14.242.16:9292/Default.aspx?tabid=" + tabid
                 + "&ctl=" + ctl + "&mid=" + mid;
 
@@ -53,7 +61,7 @@ public final class DomExplorerApp {
 
         try (Playwright playwright = Playwright.create()) {
             Browser browser = BrowserFactory.launch(playwright, config);
-            BrowserContext context = sessionManager.newContext(browser, KnownSystems.DVC_NHNN);
+            BrowserContext context = sessionManager.newContext(browser, systemKey);
             Page page = context.newPage();
 
             page.navigate(url);

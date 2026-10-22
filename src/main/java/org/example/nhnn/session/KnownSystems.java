@@ -7,13 +7,13 @@ import org.example.nhnn.config.EnvConfig;
  *
  * Selector cua DVC-NHNN lay truc tiep tu SOP_Automation_Testing_QLCV_NHNN_Cho_Opus.md
  * (da duoc xac nhan chay thanh cong thuc te boi agent Antigravity truoc day).
- * Selector cua QLCV CHUA duoc xac nhan trong SOP - danh dau TODO, can kiem tra
- * lai DOM that truoc khi dung LoginBootstrapperApp cho QLCV.
+ * Hai he thong con (DVC_NHNN, DVC_NHNN_TCCB) deu dang nhap qua CUNG mot trang
+ * (tabid=38), chi khac tai khoan dien vao - nen dung chung 1 bo selector.
  */
 public final class KnownSystems {
 
     public static final String DVC_NHNN = "dvc-nhnn";
-    public static final String QLCV = "qlcv";
+    public static final String DVC_NHNN_TCCB = "dvc-nhnn-tccb";
 
     /** Selector o nhap ten dang nhap tren form login DVC-NHNN. Nguon: SOP muc 3.1. */
     public static final String DVC_NHNN_USERNAME_INPUT = "input[id*='Login_A']";
@@ -33,11 +33,8 @@ public final class KnownSystems {
         return new LoginIndicator(config.dvcNhnnBaseUrl(), DVC_NHNN_USERNAME_INPUT);
     }
 
-    /**
-     * TODO: SOP khong mo ta chi tiet DOM trang dang nhap QLCV. Can xac nhan
-     * lai selector o nhap username/password that truoc khi dung cho QLCV.
-     */
-    public static LoginIndicator qlcvLoginIndicator(EnvConfig config) {
-        return new LoginIndicator(config.qlcvBaseUrl(), "input[type='password']");
+    /** Tai khoan Vu TCCB (Thi dua khen thuong) - cung trang dang nhap tabid=38. */
+    public static LoginIndicator dvcNhnnTccbLoginIndicator(EnvConfig config) {
+        return new LoginIndicator(config.dvcNhnnBaseUrl(), DVC_NHNN_USERNAME_INPUT);
     }
 }
